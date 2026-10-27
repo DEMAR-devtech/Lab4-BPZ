@@ -10,8 +10,10 @@ on:
 
 jobs:
   UpdateChallengesOnWebsite:
-    if: github.repository == 'juice-shop/juice-shop'
+    if: github.repository == 'juice-shop/juice-shop' && (github.ref_name == 'master' || github.ref_name == 'develop')
     runs-on: ubuntu-latest
+    env:
+      REF_NAME: ${{ github.ref_name }}
     steps:
     - name: Check out Git repository
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
@@ -25,23 +27,23 @@ jobs:
         path: juice-shop
     - name: Update challenges.yml
       run: |
-        if [ "${{ github.ref_name }}" = "master" ]; then
+        if [ "$REF_NAME" = "master" ]; then
           DEST_FILE="_data/challenges.yml"
         else
           DEST_FILE="_data/challenges_dev.yml"
         fi
-        rm -f $DEST_FILE
-        cp juice-shop/data/static/challenges.yml $DEST_FILE
+        rm -f "$DEST_FILE"
+        cp juice-shop/data/static/challenges.yml "$DEST_FILE"
     - name: Update snippets
       run: |
-        if [ "${{ github.ref_name }}" = "master" ]; then
+        if [ "$REF_NAME" = "master" ]; then
           DEST_FILE="_data/snippets.json"
         else
           DEST_FILE="_data/snippets_dev.json"
         fi
-        rm -f $DEST_FILE
+        rm -f "$DEST_FILE"
         CHALLENGES=$(ls juice-shop/data/static/codefixes/*.info.yml | xargs -n 1 basename | sed 's/\.info\.yml//' | jq -R . | jq -s -c '{"challenges": .}')
-        echo $CHALLENGES > $DEST_FILE
+        echo "$CHALLENGES" > "$DEST_FILE"
     - uses: stefanzweifel/git-auto-commit-action@8621497c8c39c72f3e2a999a26b4ca1b5058a842 #v5.0.1
       with:
         file_pattern: '_data/challenges.yml _data/snippets.json _data/challenges_dev.yml _data/snippets_dev.json'

@@ -9,8 +9,10 @@ on:
 
 jobs:
   UpdateChallengesOnWebsite:
-    if: github.repository == 'juice-shop/juice-shop'
+    if: github.repository == 'juice-shop/juice-shop' && (github.ref_name == 'master' || github.ref_name == 'develop')
     runs-on: ubuntu-latest
+    env:
+      REF_NAME: ${{ github.ref_name }}
     steps:
     - name: Check out Git repository
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
@@ -22,7 +24,7 @@ jobs:
       run: |
         cd docs/modules/ROOT/assets/data
         rm challenges.yml
-        wget https://raw.githubusercontent.com/juice-shop/juice-shop/${{ github.ref_name }}/data/static/challenges.yml
+        wget --output-document=challenges.yml "https://raw.githubusercontent.com/juice-shop/juice-shop/${REF_NAME}/data/static/challenges.yml"
     - uses: stefanzweifel/git-auto-commit-action@8621497c8c39c72f3e2a999a26b4ca1b5058a842 #v5.0.1
       with:
         commit_message: "Auto-update challenges.yml from ${{ github.sha }}"
