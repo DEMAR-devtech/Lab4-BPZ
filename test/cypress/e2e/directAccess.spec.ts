@@ -1,15 +1,11 @@
 describe('/', () => {
   describe('challenge "easterEggLevelTwoChallenge"', () => {
     it('should be able to access "secret" url for easter egg', () => {
-      cy.on('uncaught:exception', (err) => {
-        if (err.message.includes('getExtension') || err.message.includes('Cannot read properties of null')) {
-          return false
-        }
-        return true
+      cy.request('/the/devs/are/so/funny/they/hid/an/easter/egg/within/the/easter/egg').then((response) => {
+        expect(response.status).to.eq(200)
+        expect(response.headers['content-type']).to.include('text/html')
+        expect(response.body).to.include('<title>Welcome to Planet Orangeuze</title>')
       })
-      cy.visit(
-        '/the/devs/are/so/funny/they/hid/an/easter/egg/within/the/easter/egg'
-      )
       cy.expectChallengeSolved({ challenge: 'Nested Easter Egg' })
     })
   })

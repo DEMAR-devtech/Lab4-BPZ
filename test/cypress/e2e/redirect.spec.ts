@@ -18,7 +18,6 @@ describe('/redirect', () => {
         expect(response.status).to.eq(406)
         expect(response.headers.location).to.be.undefined
       })
-
     })
   })
 

@@ -1,16 +1,22 @@
 describe('/#/deluxe-membership', () => {
   describe('challenge "svgInjectionChallenge"', () => {
-    it('should be possible to pass in a forgotten test parameter abusing the redirect-endpoint to load an external image', () => {
+    it('should reject an external image loaded through an allowlist bypass', () => {
       cy.login({ email: 'jim', password: 'ncc-1701' })
       cy.location().then((loc) => {
         cy.visit(
           `/#/deluxe-membership?testDecal=${encodeURIComponent(
-            `../../..${loc.pathname}/redirect?to=https://cataas.com/cat?x=https://github.com/juice-shop/juice-shop`
+            `../../..${loc.pathname.replace(/\/$/, '')}/redirect?to=https://cataas.com/cat?x=https://github.com/juice-shop/juice-shop`
           )}`
         )
       })
 
-      cy.expectChallengeSolved({ challenge: 'Cross-Site Imaging' })
+      cy.get('svg image').eq(1).invoke('attr', 'href').then((href) => {
+        expect(href).to.include('/redirect?to=')
+        cy.request({ url: new URL(href!, Cypress.config('baseUrl')!).href, followRedirect: false, failOnStatusCode: false }).then((response) => {
+          expect(response.status).to.eq(406)
+          expect(response.headers.location).to.be.undefined
+        })
+      })
     })
   })
 
