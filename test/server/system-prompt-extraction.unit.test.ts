@@ -12,8 +12,8 @@ import { diceCoefficient } from '../../lib/utils'
 
 // Translation fixtures use the default branding regardless of the deployment configuration.
 const reference = buildSystemPrompt()
-  .replaceAll(config.get<string>('application.chatBot.name'), 'Juicy the Smart Assistant')
-  .replaceAll(config.get<string>('application.name'), 'OWASP Juice Shop')
+  .split(config.get<string>('application.chatBot.name')).join('Juicy the Smart Assistant')
+  .split(config.get<string>('application.name')).join('OWASP Juice Shop')
 
 let keepAlive: NodeJS.Timeout
 before(async () => { keepAlive = setTimeout(() => {}, 60000) })
