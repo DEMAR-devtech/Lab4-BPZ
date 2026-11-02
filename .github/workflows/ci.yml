@@ -218,17 +218,17 @@ jobs:
           timeout_minutes: 30
           max_attempts: 3
           command: >
-            NODE_ENV=7ms npm run test:server &&
-            NODE_ENV=addo npm run test:server &&
-            NODE_ENV=bodgeit npm run test:server &&
-            NODE_ENV=ctf npm run test:server &&
-            NODE_ENV=fbctf npm run test:server &&
-            NODE_ENV=juicebox npm run test:server &&
-            NODE_ENV=mozilla npm run test:server &&
-            NODE_ENV=oss npm run test:server &&
-            NODE_ENV=quiet npm run test:server &&
-            NODE_ENV=tutorial npm run test:server &&
-            NODE_ENV=unsafe npm run test:server
+            NODE_CONFIG_ENV=7ms npm run test:server &&
+            NODE_CONFIG_ENV=addo npm run test:server &&
+            NODE_CONFIG_ENV=bodgeit npm run test:server &&
+            NODE_CONFIG_ENV=ctf npm run test:server &&
+            NODE_CONFIG_ENV=fbctf npm run test:server &&
+            NODE_CONFIG_ENV=juicebox npm run test:server &&
+            NODE_CONFIG_ENV=mozilla npm run test:server &&
+            NODE_CONFIG_ENV=oss npm run test:server &&
+            NODE_CONFIG_ENV=quiet npm run test:server &&
+            NODE_CONFIG_ENV=tutorial npm run test:server &&
+            NODE_CONFIG_ENV=unsafe npm run test:server
   e2e-test:
     runs-on: ${{ matrix.os }}
     strategy:

@@ -5,11 +5,15 @@
 
 import { after, before, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
+import config from 'config'
 import { checkSystemPromptSimilarity } from '../../routes/verify'
 import { buildSystemPrompt } from '../../routes/chat'
 import { diceCoefficient } from '../../lib/utils'
 
+// Translation fixtures use the default branding regardless of the deployment configuration.
 const reference = buildSystemPrompt()
+  .replaceAll(config.get<string>('application.chatBot.name'), 'Juicy the Smart Assistant')
+  .replaceAll(config.get<string>('application.name'), 'OWASP Juice Shop')
 
 let keepAlive: NodeJS.Timeout
 before(async () => { keepAlive = setTimeout(() => {}, 60000) })
