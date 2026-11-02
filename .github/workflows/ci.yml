@@ -209,7 +209,6 @@ jobs:
         with:
           node-version: ${{ env.NODE_DEFAULT_VERSION }}
       - name: "Install application"
-        if: github.repository == 'juice-shop/juice-shop' || (github.repository != 'juice-shop/juice-shop' && matrix.os == 'ubuntu-latest' && matrix.node-version == '24')
         run: |
           npm install --global npm@${{ env.NPM_VERSION }}
           npm install
@@ -250,16 +249,29 @@ jobs:
           npm install --global @angular/cli
       - name: "Install application"
         run: npm install
+      - name: "Install Cypress binary"
+        run: npx cypress install
+      - name: "Build server and start application"
+        shell: bash
+        run: |
+          npm run build:server
+          npm start > application.log 2>&1 &
+          for attempt in {1..90}; do
+            if curl --fail --silent http://127.0.0.1:3000/ > /dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat application.log
+          exit 1
       - name: "Execute end-to-end tests on Ubuntu"
         if: ${{ matrix.os == 'ubuntu-latest' }}
         uses: cypress-io/github-action@09090944bd8aaa2a517cefb6e38bf1aae336b42b #v7.4.3
         with:
           install: false
           browser: ${{ matrix.browser }}
-          start: npm start
-          wait-on: http://localhost:3000
-          record: true
-          group: ${{ matrix.browser }} @ ${{ matrix.os }}
+          record: ${{ github.repository == 'juice-shop/juice-shop' }}
+          group: ${{ github.repository == 'juice-shop/juice-shop' && format('{0} @ {1}', matrix.browser, matrix.os) || '' }}
         env:
           SOLUTIONS_WEBHOOK: ${{ secrets.E2E_SOLUTIONS_WEBHOOK }}
           ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
@@ -271,15 +283,22 @@ jobs:
         with:
           install: false
           browser: ${{ matrix.browser }}
-          start: npm start
-          wait-on: http://localhost:3000
-          record: true
-          group: ${{ matrix.browser }} @ ${{ matrix.os }}
+          record: ${{ github.repository == 'juice-shop/juice-shop' }}
+          group: ${{ github.repository == 'juice-shop/juice-shop' && format('{0} @ {1}', matrix.browser, matrix.os) || '' }}
         env:
           CYPRESS_CACHE_FOLDER: /Users/runner/Library/Caches/Cypress
           ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: "Upload application and Cypress diagnostics"
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
+        with:
+          name: e2e-diagnostics-${{ matrix.os }}
+          path: |
+            application.log
+            cypress/screenshots
+            cypress/videos
   smoke-test:
     runs-on: ubuntu-latest
     env:

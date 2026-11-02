@@ -67,27 +67,14 @@ void describe('/redirect', () => {
     assert.equal(res.status, 302)
   })
 
-  void it('GET error message with information leakage when calling /redirect without query parameter', async () => {
-    const res = await request(app)
-      .get('/redirect')
-    assert.equal(res.status, 500)
-    assert.ok(res.headers['content-type']?.includes('text/html'))
-    assert.ok(res.text.includes(`<h1>${config.get<string>('application.name')} (Express`))
-    assert.ok(res.text.includes('TypeError'))
-    assert.ok(res.text.includes('of undefined'))
-    assert.ok(res.text.includes('&#39;includes&#39;'))
-  })
-
-  void it('GET error message with information leakage when calling /redirect with unrecognized query parameter', async () => {
-    const res = await request(app)
-      .get('/redirect?x=y')
-    assert.equal(res.status, 500)
-    assert.ok(res.headers['content-type']?.includes('text/html'))
-    assert.ok(res.text.includes(`<h1>${config.get<string>('application.name')} (Express`))
-    assert.ok(res.text.includes('TypeError'))
-    assert.ok(res.text.includes('of undefined'))
-    assert.ok(res.text.includes('&#39;includes&#39;'))
-  })
+  for (const query of ['', '?x=y', '?to[x]=y', '?to=a&to=b']) {
+    void it(`GET rejects missing or malformed redirect target ${query}`, async () => {
+      const res = await request(app).get('/redirect' + query).redirects(0)
+      assert.equal(res.status, 406)
+      assert.equal(res.headers.location, undefined)
+      assert.ok(!res.text.includes('TypeError'))
+    })
+  }
 
   void it('GET error message hinting at allowlist validation when calling /redirect with an unrecognized "to" target', async () => {
     const res = await request(app)
@@ -98,14 +85,16 @@ void describe('/redirect', () => {
     assert.ok(res.text.includes('Unrecognized target URL for redirect: whatever'))
   })
 
-  void it('GET redirected to target URL in "to" parameter when a allow-listed URL is part of the query string', async () => {
-    const res = await request(app)
-      .get('/redirect?to=/score-board?satisfyIndexOf=https://github.com/juice-shop/juice-shop')
-      .redirects(1)
-    assert.equal(res.status, 200)
-    assert.ok(res.headers['content-type']?.includes('text/html'))
-    assert.ok(res.text.includes('main.js'))
-    assert.ok(res.text.includes('scripts.js'))
-    assert.ok(res.text.includes('polyfills.js'))
-  })
+  for (const target of [
+    '/score-board?satisfyIndexOf=https://github.com/juice-shop/juice-shop',
+    'https://example.invalid/?https://github.com/juice-shop/juice-shop',
+    'https://github.com@evil.invalid/juice-shop/juice-shop',
+    'https://github.com/juice-shop/juice-shop/issues'
+  ]) {
+    void it(`GET rejects allowlist bypass ${target}`, async () => {
+      const res = await request(app).get('/redirect').query({ to: target }).redirects(0)
+      assert.equal(res.status, 406)
+      assert.equal(res.headers.location, undefined)
+    })
+  }
 })

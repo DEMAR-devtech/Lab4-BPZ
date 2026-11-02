@@ -46,11 +46,30 @@ void describe('/promotion', () => {
     assert.ok(res.text.includes('<source src="./video" type="video/mp4">'))
   })
 
-  void it('GET promotion video page contains subtitles as <script>', async () => {
+  void it('GET promotion video page contains base64 subtitles in an inert element', async () => {
     const res = await request(app)
       .get('/promotion')
     assert.ok(res.headers['content-type']?.includes('text/html'))
-    assert.ok(res.text.includes('<script id="subtitle" type="text/vtt" data-label="English" data-lang="en">'))
+    assert.ok(res.text.includes('<script id="subtitle" type="text/plain" data-label="English" data-lang="en">'))
+    const encoded = res.text.match(/<script id="subtitle"[^>]*>([^<]*)<\/script>/)?.[1]
+    assert.ok(encoded)
+    assert.equal(Buffer.from(encoded, 'base64').toString('utf8'), fs.readFileSync(subtitlePath, 'utf8'))
+  })
+
+  void it('GET keeps malicious subtitles out of executable markup', async () => {
+    const original = fs.readFileSync(subtitlePath)
+    const payload = 'WEBVTT\n\n00:00:00.000 --> 00:00:01.000\n</script><script>window.subtitleXss = true</script>'
+    try {
+      fs.writeFileSync(subtitlePath, payload)
+      const res = await request(app).get('/promotion')
+      assert.equal(res.status, 200)
+      assert.ok(!res.text.includes(payload))
+      const encoded = res.text.match(/<script id="subtitle"[^>]*>([^<]*)<\/script>/)?.[1]
+      assert.ok(encoded)
+      assert.equal(Buffer.from(encoded, 'base64').toString('utf8'), payload)
+    } finally {
+      fs.writeFileSync(subtitlePath, original)
+    }
   })
 })
 

@@ -9,15 +9,16 @@ describe('/redirect', () => {
   })
 
   describe('challenge "redirectChallenge"', () => {
-    it('should redirect to target URL if allowlisted URL is contained in it as parameter', () => {
+    it('should reject an allowlisted URL embedded in an external target', () => {
       cy.request({
         url: '/redirect?to=https://owasp.org?trickIndexOf=https://github.com/juice-shop/juice-shop',
-        followRedirect: false
+        followRedirect: false,
+        failOnStatusCode: false
       }).then((response) => {
-        expect(response.status).to.eq(302)
-        expect(response.headers.location).to.eq('https://owasp.org?trickIndexOf=https://github.com/juice-shop/juice-shop')
+        expect(response.status).to.eq(406)
+        expect(response.headers.location).to.be.undefined
       })
-      cy.expectChallengeSolved({ challenge: 'Allowlist Bypass' })
+
     })
   })
 
