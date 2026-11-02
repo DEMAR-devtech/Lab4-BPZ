@@ -10,8 +10,7 @@ describe('/#/deluxe-membership', () => {
         )
       })
 
-      cy.get('svg image').eq(1).invoke('attr', 'href').then((href) => {
-        expect(href).to.include('/redirect?to=')
+      cy.get('svg image').eq(1).invoke('attr', 'href').should('include', '/redirect?to=').then((href) => {
         cy.request({ url: new URL(href!, Cypress.config('baseUrl')!).href, followRedirect: false, failOnStatusCode: false }).then((response) => {
           expect(response.status).to.eq(406)
           expect(response.headers.location).to.be.undefined
